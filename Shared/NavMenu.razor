@@ -1,0 +1,28 @@
+﻿
+<div id="sidebar" class="sidebar">
+    <div class="sidebar-menu nav-collapse">
+        <div class="divide-20"></div>
+      
+        <ul>
+            <li class="active">
+                <a href="#">
+                    <i class="fa fa-tachometer fa-fw"></i> <span class="menu-text">HORECA ANALYTICS</span>
+                    <span class="selected"></span>
+                </a>
+            </li>
+        </ul>
+        <!-- /SIDEBAR MENU -->
+    </div>
+</div>
+
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

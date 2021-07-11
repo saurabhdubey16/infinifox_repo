@@ -1,0 +1,1370 @@
+﻿@page "/"
+@using VMP.Dashboard.Models
+
+
+@inject NavigationManager NavigationManager
+
+@code {
+
+
+    public static String[] ThemeColorList = new String[] { "#816aae", "#d682b6", "#f9956b", "#fec578", "#5e8ac7", "#5ea5c7", "#50c5dd", "#5dc4b1", "#ececec" };
+    public String[] RevenueOverTimepalettes = new String[] { ThemeColorList[8], ThemeColorList[1] };
+    public String[] VisitOverTimepalettes = new String[] { ThemeColorList[8], ThemeColorList[0] };
+    public String[] OrderOverTimepalettes = new String[] { ThemeColorList[8], ThemeColorList[2] };
+    public String[] CustomerTimepalettes = new String[] { ThemeColorList[8], ThemeColorList[5], ThemeColorList[1] };
+
+    private Theme Theme { get; set; }
+
+
+    // revenue over time from db
+    SqlDataAccess sda = new SqlDataAccess();
+
+    private List<RevenueOverTime1> revenueOverTimesModel;
+    private List<MyPieChartModelDb> piechartModelDb;
+    private List<OrderbyPricebucket> OrderByPricebucketDb;
+    private List<OrderOverTimeDb> orderOverTimeDb;
+    private List<TrafficSourceDb> TrafficSourceDb;
+    private List<DeviceTypeDb> DeviceTypeDb;
+    private List<VisitOverTimeDb> VisiteOverTimeDb;
+    private List<totalsales> TotalsalesDb;
+    private List<productListed> ProductListedb;
+    private List<CategoryDb> catSubCatDb;
+    private List<RegionDb> regions;
+    private List<SegmentDb> segments;
+    private List<CustomerOverTimeDb> customerOverTimeDb;
+    private List<CustomerPieDb> customerPieDb;
+    private List<Top10SKUs> Top10SKUsDb;
+    private List<SKUSparklineAllData> SKUSparklineData;
+    private List<OrdersDb> Orders;
+    private List<OrdersPerCustomerDb> ordersPerCustomers;
+    private List<Customers> customers;
+    private List<Top5Customers> Top5CustomersDb;
+    private List<CustSparklineAllData> CustSparklineData;
+    private List<VisitDb> visits;
+
+    protected override void OnInitialized()
+    {
+        catSubCatDb = sda.GetCategoryDbs();
+        regions = sda.GetRegions();
+        segments = sda.GetSegment();
+        //OnDateRangeChange(RangePickerEventArgs<DateTime?> args);
+
+        sda.SetDate(StartDate, EndDate);
+
+        IntializeData();
+
+        //cs.Orders.GroupBy(x => x.Region).Select(group => new { group.Key, total = group.Sum(x => x.Sales) }).ToList();
+
+    }
+
+
+    private void IntializeData()
+    {
+        sda.FilterCreation(multiselectValue, regionvalues, segemntvalues);
+
+        revenueOverTimesModel = sda.GetRevenueOverTimes();
+        //Donut Db Chart
+        piechartModelDb = sda.GetMyPieChartModels();
+
+        OrderByPricebucketDb = sda.GetOrderbyPricebucket();
+
+        orderOverTimeDb = sda.GetOrderOverTimes();
+
+        TrafficSourceDb = sda.GetTrafficSource();
+
+        DeviceTypeDb = sda.GetDeviceType();
+
+        VisiteOverTimeDb = sda.GetVisitOverTimes();
+
+        TotalsalesDb = sda.GetTotalsales();
+
+        ProductListedb = sda.GetProductListedb();
+
+        customerOverTimeDb = sda.GetCustomerOverTimes();
+
+        customerPieDb = sda.GetCustomerspie();
+
+        Top10SKUsDb = sda.GetTop10SKUs();
+
+        //SKUSparklineData = sda.GetTop10SKUsSparkline();
+
+        Orders = sda.GetOrders();
+
+        ordersPerCustomers = sda.GetOrdersPerCustomers();
+
+        customers = sda.GetCustomers();
+
+        Top5CustomersDb = sda.GetTop5Customers();
+
+        // CustSparklineData = sda.GetTop5CustSparkline();
+
+        visits = sda.GetVisitDbs();
+    }
+
+
+    public string[] multiselectValue { get; set; }
+    public string[] regionvalues { get; set; }
+    public string[] segemntvalues { get; set; }
+
+    public void getValues()
+    {
+        var value = multiselectValue;
+        IntializeData();
+    }
+
+    public DateTime? StartDate { get; set; } = new DateTime(2020, 01, 01);
+    public DateTime? EndDate { get; set; } = new DateTime(2020, 12, 31);
+    public DateTime? PrevStartDate { get; set; } = new DateTime(2019, 01, 01);
+    public DateTime? PrevEndDate { get; set; } = new DateTime(2019, 12, 31);
+    public DateTime MinDate { get; set; } = new DateTime(2019, 01, 01);
+    public DateTime MaxDate { get; set; } = new DateTime(2020, 12, 31);
+    public DateTime lastMonthStart { get; set; } = new DateTime(2020, 11, 01);
+    public DateTime lastMonthEnd { get; set; } = new DateTime(2020, 11, 30);
+    public DateTime last3MonthStart { get; set; } = new DateTime(2020, 10, 01);
+    public DateTime last3MonthEnd { get; set; } = new DateTime(2020, 12, 31);
+    public DateTime ytdStart { get; set; } = new DateTime(2020, 01, 01);
+    public DateTime ytdEnd { get; set; } = new DateTime(2020, 12, 31);
+    public DateTime oneyearStart { get; set; } = new DateTime(2020, 01, 01);
+    public DateTime oneyearEnd { get; set; } = new DateTime(2020, 12, 31);
+    public DateTime twoyearsStart { get; set; } = new DateTime(2019, 01, 01);
+    public DateTime twoyearsEnd { get; set; } = new DateTime(2020, 12, 31);
+    //public DateTime allTimeStart { get; set; } = new DateTime(2019, 01, 01);
+    //public DateTime allTimeEnd { get; set; } = new DateTime(2020, 12, 31);
+
+
+    public void OnDateRangeChange(RangePickerEventArgs<DateTime?> args)
+    {
+        sda.SetDate(args.StartDate, args.EndDate);
+        //StateHasChanged();
+        //IntializeData();
+
+    }
+
+    public bool ShowSelectAllCheckBox { get; set; } = true;
+    public bool EnableSelectionOrders { get; set; } = false;
+    public bool EnableCheckBox { get; set; } = true;
+
+
+
+
+
+    //Customer Pie Chart
+
+    public class CustomerPie
+    {
+        public string CustomerName { get; set; }
+        public double CustomerValue { get; set; }
+        public string CustomerMapping { get; set; }
+        public string CustomerColor { get; set; }
+    }
+
+    public List<CustomerPie> customerData = new List<CustomerPie>
+{
+         new CustomerPie
+        {
+            CustomerName = "New Customer",
+            CustomerValue = 489,
+            CustomerMapping = "65%",
+            CustomerColor = ThemeColorList[1]
+        },
+        new CustomerPie
+        {
+            CustomerName = "Repeat Customer",
+            CustomerValue = 265,
+            CustomerMapping = "35%",
+            CustomerColor = ThemeColorList[5]
+        }
+    };
+
+    //Spakline charts
+    public class Sku
+    {
+        public string Month { get; set; }
+        public double sales { get; set; }
+    }
+    public List<Sku> skuData = new List<Sku>
+{
+        new Sku{Month="Jan",sales=500},
+        new Sku{Month="Feb",sales=800},
+        new Sku{Month="Mar",sales=200},
+        new Sku{Month="Apr",sales=300},
+        new Sku{Month="May",sales=500},
+        new Sku{Month="Jun",sales=700},
+        new Sku{Month="Jul",sales=900},
+        new Sku{Month="Aug",sales=1100},
+        new Sku{Month="Sep",sales=900},
+        new Sku{Month="Oct",sales=800},
+        new Sku{Month="Nov",sales=700},
+        new Sku{Month="Dec",sales=500}
+    };
+
+    public class Sku2
+    {
+        public string Month { get; set; }
+        public double sales { get; set; }
+    }
+    public List<Sku2> skuData2 = new List<Sku2>
+{
+        new Sku2{Month="Jan",sales=1500},
+        new Sku2{Month="Feb",sales=1800},
+        new Sku2{Month="Mar",sales=1200},
+        new Sku2{Month="Apr",sales=1300},
+        new Sku2{Month="May",sales=1500},
+        new Sku2{Month="Jun",sales=1700},
+        new Sku2{Month="Jul",sales=1900},
+        new Sku2{Month="Aug",sales=1100},
+        new Sku2{Month="Sep",sales=1900},
+        new Sku2{Month="Oct",sales=1800},
+        new Sku2{Month="Nov",sales=1700},
+        new Sku2{Month="Dec",sales=1500}
+    };
+
+    public class TrafficWorld
+    {
+        public string Name { get; set; }
+        public double View { get; set; }
+    }
+
+    public List<TrafficWorld> trafficView = new List<TrafficWorld>
+{
+        new TrafficWorld { Name="China" , View = 50000},
+        new TrafficWorld { Name="France" , View = 40000},
+        new TrafficWorld { Name="Russia" , View = 84000},
+        new TrafficWorld { Name="Poland" , View = 2000},
+        new TrafficWorld { Name="United States" , View = 83400},
+        new TrafficWorld { Name="Australia" , View = 90000},
+        new TrafficWorld { Name="Kuwait" , View = 55000},
+        new TrafficWorld { Name="Peru" , View = 52450},
+        new TrafficWorld { Name="Netherlands" , View = 65300}
+    };
+
+
+    public string[] ShapeColorOne = { ThemeColorList[0] };
+    public string[] ShapeColorTwo = { ThemeColorList[1] };
+    public string[] ShapeColorThree = { ThemeColorList[2] };
+    public string[] ShapeColorFour = { ThemeColorList[3] };
+    public string[] ShapeColorFive = { ThemeColorList[4] };
+
+    // PURCHASED FUNNEL
+    public class FunnelData
+    {
+        public string Purchased { get; set; }
+        public int Value { get; set; }
+        public string color { get; set; }
+    }
+
+
+
+    public List<FunnelData> FunnelChartPoints { get; set; } = new List<FunnelData>
+{
+        new FunnelData { Purchased = "Purchased", Value = 3673, color=ThemeColorList[0] },
+        new FunnelData { Purchased = "Added to cart", Value = 22574, color=ThemeColorList[1] },
+        new FunnelData { Purchased = "Shopped", Value = 144324, color=ThemeColorList[2] },
+        new FunnelData { Purchased = "Visited", Value = 160517, color=ThemeColorList[3] },
+    };
+
+    public void TooltipRenderEvent(Syncfusion.Blazor.Charts.TooltipRenderEventArgs Args)
+    {
+        var text = Args.Text.Split(':');
+        var pointX = text[0];
+        var y = float.Parse(text[1]);
+        var pointY = y.ToString("#,##0");
+        Args.Text = pointX + " : $" + pointY;
+    }
+
+}
+
+<div class="row">
+    <div id="content" class="col-md-12">
+        <!-- PAGE HEADER-->
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="page-header">
+                    <!-- STYLER -->
+                    <!-- /STYLER -->
+                    <!-- BREADCRUMBS -->
+                    @*<ul class="breadcrumb">
+                            <li>
+                                <i class="fa fa-home"></i>
+                                <a href="index.html">Home</a>
+                            </li>
+                            <li>Overview</li>
+                        </ul>*@
+                    <!-- /BREADCRUMBS -->
+                    <div class="clearfix">
+                    </div>
+                    <div class="row" style="padding-bottom: 10px;border-top: 1px solid #ececec;padding-top: 10px;">
+                        <div class="col-sm-3 filter-header">
+                            <h5>Category/SubCategory:</h5>
+                            <SfMultiSelect TValue="string[]" AllowFiltering="true" TItem="CategoryDb" Mode="@VisualMode.CheckBox" Placeholder="Select a Category" DataSource="@catSubCatDb" ShowSelectAll="@ShowSelectAllCheckBox"
+                                           EnableSelectionOrder="@EnableSelectionOrders" FilterBarPlaceholder="Search Category" EnableGroupCheckBox="@EnableCheckBox" PopupHeight="350px" ShowDropDownIcon="true" @bind-Value="multiselectValue">
+                                <MultiSelectFieldSettings GroupBy="Category" Value="SubCategory"></MultiSelectFieldSettings>
+                                @*<MultiSelectEvents TValue="string[]" TItem="CategoryDb" OnClose="getValues"></MultiSelectEvents>*@
+                            </SfMultiSelect>
+                        </div>
+                        <div class="col-sm-2 filter-header">
+                            <h5>Region/State:</h5>
+                            <SfMultiSelect TValue="string[]" TItem="RegionDb" AllowFiltering="true" Placeholder="Select a Region" Mode="@VisualMode.CheckBox" DataSource="@regions" ShowSelectAll="@ShowSelectAllCheckBox" EnableSelectionOrder="@EnableSelectionOrders" ShowDropDownIcon="true" FilterBarPlaceholder="Search Region" PopupHeight="350px" @bind-Value="regionvalues">
+                                <MultiSelectFieldSettings Text="Name" Value="Name"></MultiSelectFieldSettings>
+                                @*<MultiSelectEvents TValue="string[]" TItem="RegionDb" OnClose="getValues"></MultiSelectEvents>*@
+                            </SfMultiSelect>
+                        </div>
+                        <div class="col-sm-3 filter-header">
+                            <h5>Customer Segment:</h5>
+                            <SfMultiSelect TValue="string[]" TItem="SegmentDb" AllowFiltering="true" Placeholder="Select Customer Segment" Mode="@VisualMode.CheckBox" DataSource="@segments" ShowSelectAll="@ShowSelectAllCheckBox" EnableSelectionOrder="@EnableSelectionOrders" ShowDropDownIcon="true" FilterBarPlaceholder="Search Customer Segment" PopupHeight="350px" @bind-Value="segemntvalues">
+                                <MultiSelectFieldSettings Text="Name" Value="Name"></MultiSelectFieldSettings>
+                                @*<MultiSelectEvents TValue="string[]" TItem="SegmentDb" OnClose="getValues"></MultiSelectEvents>*@
+                            </SfMultiSelect>
+                        </div>
+                        <div class="col-sm-3 filter-header">
+                            <h5>Time Period:</h5>
+                            <SfDateRangePicker Min="@MinDate" Max="@MaxDate" Placeholder="Select a Time Period" @bind-StartDate="@StartDate" @bind-EndDate="@EndDate">
+                                <DateRangePickerEvents TValue="DateTime?" ValueChange="@OnDateRangeChange"></DateRangePickerEvents>
+                                <DateRangePickerPresets>
+                                    <DateRangePickerPreset Label="Last Month" Start="@lastMonthStart" End="@lastMonthEnd"></DateRangePickerPreset>
+                                    <DateRangePickerPreset Label="Last 3 Months" Start="@last3MonthStart" End="@last3MonthEnd"></DateRangePickerPreset>
+                                    <DateRangePickerPreset Label="Year To Date" Start="@ytdStart" End="@ytdEnd"></DateRangePickerPreset>
+                                    <DateRangePickerPreset Label="1 Year" Start="@oneyearStart" End="@oneyearEnd"></DateRangePickerPreset>
+                                    <DateRangePickerPreset Label="2 Years" Start="@twoyearsStart" End="@twoyearsEnd"></DateRangePickerPreset>
+                                </DateRangePickerPresets>
+                            </SfDateRangePicker>
+                        </div>
+                        <div class="col-sm-1 filter-header">
+                            <h5></h5>
+                            <button class="btn btn-primary" style="margin-top:22px;" @onclick="getValues">Apply</button>
+                        </div>
+                    </div>
+                    @*<div class="description"></div>*@
+                </div>
+            </div>
+        </div>
+        <!--Filters-->
+        <div class="container">
+
+        </div>
+
+        <!--/Filters-->
+        <!-- /PAGE HEADER -->
+        <!-- DASHBOARD CONTENT -->
+
+        <div class="row-header-purple">
+            <div style="float:left;">
+                Revenue
+            </div>
+            <div style="float:right;font-size:13px;">
+                View More >>
+            </div>
+        </div>
+        <div class="row">
+            <!-- COLUMN 1 -->
+            <div class="col-md-2" style="padding-right: 0px !important;">
+                <div class="dashbox panel panel-default" style="text-align:center;">
+                    <div class="panel-header">
+                        <h5>Total Revenue</h5>
+                    </div>
+                    <div class="panel-body">
+                        <div class="panel-custom">
+                            @foreach (var sale in TotalsalesDb)
+                            {
+                                <span>$@(Math.Round(sale.sales, 0).ToString("#,##0"))</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="panel-bottom">
+                        <div class="card-footer">
+                            @foreach (var sale in TotalsalesDb)
+                            {
+                                if (sale.Rev_Growth < 0)
+                                {
+                                    <span class="percent-change red">
+                                        <i class="fa fa-caret-down" style="font-size:20px;"></i>
+                                        <span>@Math.Round(sale.Rev_Growth, 2) %</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="percent-change green">
+                                        <i class="fa fa-caret-up" style="font-size:20px;"></i>
+                                        <span>@Math.Round(sale.Rev_Growth, 2) %</span>
+                                    </span>
+                                }
+
+
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="dashbox panel panel-default" style="text-align:center;">
+                    <div class="panel-header">
+                        <h5> Products Listed</h5>
+                    </div>
+                    <div class="panel-body">
+                        <div class="panel-custom">
+                            @foreach (var pro in ProductListedb)
+                            {
+                                <span>@pro.product</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="panel-bottom">
+                        <div class="card-footer">
+                            @foreach (var pro in ProductListedb)
+                            {
+                                if (pro.Rev_Growth < 0)
+                                {
+                                    <span class="percent-change red">
+                                        <i class="fa fa-caret-down" style="font-size:20px;"></i>
+                                        <span>@Math.Round(pro.Rev_Growth, 2) %</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="percent-change green">
+                                        <i class="fa fa-caret-up" style="font-size:20px;"></i>
+                                        <span>@Math.Round(pro.Rev_Growth, 2) %</span>
+                                    </span>
+                                }
+
+
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-10">
+                <!-- BOX -->
+                <div class="box border">
+                    <div class="box-title-white"><span><h5>Revenue Over: Time</h5></span></div>
+                    <div class="box-body">
+                        @*<div id="chart_lines" class="chart" style="height: 218px;"></div>*@
+                        <SfChart Height="218px" Palettes="@RevenueOverTimepalettes" UseGroupingSeparator="true">
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTimeCategory" IntervalType="IntervalType.Months" LabelFormat="MMM-yy" LabelIntersectAction="Syncfusion.Blazor.Charts.LabelIntersectAction.Hide">
+                                @*<ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" Interval="1">*@
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis LabelFormat="$#,##0">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+
+                                <ChartAxisMajorGridLines Width="0.5"></ChartAxisMajorGridLines>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                            </ChartPrimaryYAxis>
+                            <ChartTooltipSettings Enable="true" Format="${point.x} : ${point.y}</b>"></ChartTooltipSettings>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@revenueOverTimesModel" XName="Month" YName="PreviousSeriesValue"
+                                             Name="Previous" Type="ChartSeriesType.Area">
+
+                                </ChartSeries>
+                                <ChartSeries DataSource="@revenueOverTimesModel" XName="Month" YName="CurrentSeriesValue"
+                                             Name="Current" Type="ChartSeriesType.Column" ColumnSpacing="0.1" ColumnWidth="0.6" Opacity="0.7">
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+
+                            <ChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </div>
+                </div>
+                <!-- /BOX -->
+            </div>
+
+        </div>
+        <!-- /Revenue chart -->
+        <div class="row">
+            <div class="col-md-4" style="padding-right: 0px !important;">
+                <div class="box border">
+                    <div class="box-title-white"><span><h5>Revenue by Categories</h5></span></div>
+                    <div class="box-body">
+                        @*<div id="pie_chart" class="chart" style="height: 265px;"></div>*@
+                        <SfAccumulationChart Height="265px">
+                            <AccumulationChartLegendSettings Visible="false" />
+                            <AccumulationChartEvents TooltipRender="TooltipRenderEvent" />
+                            <AccumulationChartTooltipSettings Enable="true" Format="${point.x} : ${point.y}"></AccumulationChartTooltipSettings>
+                            <AccumulationChartSeriesCollection>
+                                <AccumulationChartSeries DataSource="@piechartModelDb" XName="SegmentName" YName="SegmentValue" Radius="80%"
+                                                         InnerRadius="70%" Name="Revenue By Categories" PointColorMapping="fill">
+                                    <AccumulationDataLabelSettings Visible="true" Position="AccumulationLabelPosition.Outside">
+                                        <Template>
+                                            @{
+                                                var ct = context as AccumulationChartDataPointInfo;
+
+                                            }
+                                            <div style="text-align:center"> @ct.X <br> @Math.Round(ct.Percentage)% </div>
+                                        </Template>
+                                    </AccumulationDataLabelSettings>
+
+                                </AccumulationChartSeries>
+                            </AccumulationChartSeriesCollection>
+                        </SfAccumulationChart>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="panel panel-default box">
+                    <div class="box-title-white">
+                        <span><h5>Top SKUs</h5></span>
+                    </div>
+                    <div class="panel-body" style="padding-top: 0px !important;">
+
+                        @if (Top10SKUsDb == null)
+                        {
+                            <p><em>Loading...</em> </p>
+                        }
+                        else
+                        {
+                            <div class="big sparkline-stats col-sm-6">
+                                <!-- <div class="sparkline-row"> -->
+                                <table class="sparkline-table big">
+                                    @for (int i = 0; i < Math.Round(((decimal)@Top10SKUsDb.Count / 2), 0); i++)
+                                    {
+                                        <tr>
+                                            <td class="title"><h6>@Top10SKUsDb[i].Product_Name</h6></td>
+                                            <td>
+                                                @{
+                                                    SKUSparklineData = sda.GetTop10SKUsSparkline(@Top10SKUsDb[i].Product_Name.ToString());
+                                                    //if (SKUSparklineData.Any(sku => sku.SkuName == @Top10SKUsDb[i].Product_Name))
+                                                    //{
+                                                    //    var data = SKUSparklineData.Find(sku => sku.SkuName == @Top10SKUsDb[i].Product_Name);
+
+
+                                                    <SfSparkline XName="OrderDate"
+                                                                 YName="sales"
+                                                                 ValueType="SparklineValueType.DateTime"
+                                                                 TValue="SKUSparklineAllData"
+                                                                 DataSource="SKUSparklineData"
+                                                                 Height="30px"
+                                                                 Width="90px"
+                                                                 HighPointColor="Green"
+                                                                 LowPointColor="red">
+                                                        <SparklineTooltipSettings Visible="true" TValue="SKUSparklineAllData">
+                                                            <Template>
+                                                                @{
+                                                                    <div style="background-color: #555555;  color : white; padding:5px; width:120px;">@context.OrderDate.Date.ToString("MMM-yy") : $@context.sales.ToString("#,##0")</div>
+                                                                }
+                                                            </Template>
+                                                        </SparklineTooltipSettings>
+
+                                                        <SparklineMarkerSettings Visible="new List<VisibleType> { VisibleType.High, VisibleType.Low }"></SparklineMarkerSettings>
+                                                    </SfSparkline>
+                                                    // }
+                                                }
+                                            </td>
+                                            <td class="value">$@Top10SKUsDb[i].CurrSales.ToString("#,##0")</td>
+                                            @if (Top10SKUsDb[i].Growth >= 0)
+                                            {
+                                                <td class="value positive">@(Math.Round(Top10SKUsDb[i].Growth, 2))%</td>
+                                            }
+                                            else
+                                            {
+                                                <td class="value negative">@(Math.Round(Top10SKUsDb[i].Growth, 2))%</td>
+                                            }
+                                        </tr>
+                                    }
+                                </table>
+                            </div>
+                            <div class="big sparkline-stats col-sm-6">
+                                <!-- <div class="sparkline-row"> -->
+                                <table class="sparkline-table big">
+                                    @for (int j = Convert.ToInt32(Math.Round(((decimal)@Top10SKUsDb.Count / 2), 0)); j < @Top10SKUsDb.Count; j++)
+                                    {
+                                        <tr>
+                                            <td class="title"><h6>@Top10SKUsDb[j].Product_Name</h6></td>
+                                            <td>
+                                                @{
+                                                    SKUSparklineData = sda.GetTop10SKUsSparkline(@Top10SKUsDb[j].Product_Name.ToString());
+                                                    //if (SKUSparklineData.Any(sku => sku.SkuName == @Top10SKUsDb[j].Product_Name))
+                                                    //{
+                                                    //var data = SKUSparklineData.Find(sku => sku.SkuName == @Top10SKUsDb[j].Product_Name);
+
+
+                                                    <SfSparkline XName="OrderDate"
+                                                                 YName="sales"
+                                                                 ValueType="SparklineValueType.DateTime"
+                                                                 TValue="SKUSparklineAllData"
+                                                                 DataSource="SKUSparklineData"
+                                                                 Height="30px"
+                                                                 Width="90px"
+                                                                 HighPointColor="Green"
+                                                                 LowPointColor="red">
+                                                        <SparklineTooltipSettings Visible="true" TValue="SKUSparklineAllData">
+                                                            <Template>
+                                                                @{
+                                                                    <div style="background-color: #555555;  color : white; padding:5px; width:120px;">@context.OrderDate.Date.ToString("MMM-yy") : $@context.sales.ToString("#,##0")</div>
+                                                                }
+                                                            </Template>
+                                                        </SparklineTooltipSettings>
+
+                                                        <SparklineMarkerSettings Visible="new List<VisibleType> { VisibleType.High, VisibleType.Low }"></SparklineMarkerSettings>
+                                                    </SfSparkline>
+                                                    // }
+                                                }
+                                            </td>
+                                            <td class="value">$@Top10SKUsDb[j].CurrSales.ToString("#,##0")</td>
+                                            @if (Top10SKUsDb[j].Growth >= 0)
+                                            {
+                                                <td class="value positive">@Math.Round(Top10SKUsDb[j].Growth, 2)%</td>
+                                            }
+                                            else
+                                            {
+                                                <td class="value negative">@Math.Round(Top10SKUsDb[j].Growth, 2)%</td>
+                                            }
+                                        </tr>
+                                    }
+
+
+                                </table>
+                            </div>
+
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--Orders Component-->
+        <div class="row-header-orange">
+            <div style="float:left;">
+                Orders
+            </div>
+            <div style="float:right;font-size:13px;">
+                View More >>
+            </div>
+        </div>
+        <div class="row">
+
+            <div class="col-md-8" style="padding-right: 0px !important;">
+                <!-- BOX -->
+                <div class="box border">
+                    <div class="box-title-white" style="padding-bottom: 1px;"><span><h5>Orders Over: Time</h5></span></div>
+                    <div class="box-body" style="padding-top: 1px;">
+                        <div class="row rowstyle">
+
+                            <div class="col-md-3">
+                                <h6 style="font-weight: 800; color: #828282;">Orders</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    @foreach (var pro in Orders)
+                                    {
+                                        @pro.Orders
+                                    }
+                                    @foreach (var pro in Orders)
+                                    {
+                                        if (pro.Rev_Growth < 0)
+                                        {
+                                            <span class="percent-change red">
+                                                <i class="fa fa-caret-down"></i>
+                                                @Math.Round(pro.Rev_Growth, 2) %
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="percent-change green">
+                                                <i class="fa fa-caret-up"></i>
+                                                @Math.Round(pro.Rev_Growth, 2) %
+                                            </span>
+                                        }
+
+                                    }
+                                </h5>
+                            </div>
+
+                            <div class="col-md-3">
+                                <h6 style="font-weight: 800; color: #828282;">Products Listed</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    @foreach (var pro in ProductListedb)
+                                    {
+                                        @pro.product
+
+                                        if (pro.Rev_Growth < 0)
+                                        {
+                                            <span class="percent-change red">
+                                                <i class="fa fa-caret-down"></i>
+                                                @Math.Round(pro.Rev_Growth, 2) %
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="percent-change green">
+                                                <i class="fa fa-caret-up"></i>
+                                                @Math.Round(pro.Rev_Growth, 2) %
+                                            </span>
+                                        }
+
+                                    }
+                                </h5>
+                            </div>
+                            <!-- <div class="col-lg-3" style="border-left: 3px solid #faeaec; margin: 0px -16px;"> -->
+                            <div class="col-md-3">
+                                <h6 style="font-weight: 800; color: #828282;">Orders/ Customers</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    @foreach (var pro in ordersPerCustomers)
+                                    {
+                                        <span>@pro.orders</span>
+
+                                        if (pro.Rev_Growth < 0)
+                                        {
+                                            <span class="percent-change red">
+                                                <i class="fa fa-caret-down"></i>
+                                                @Math.Round(pro.Rev_Growth, 2) %
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="percent-change green">
+                                                <i class="fa fa-caret-up"></i>
+                                                @Math.Round(pro.Rev_Growth, 2) %
+                                            </span>
+                                        }
+
+                                    }
+                                </h5>
+                            </div>
+                        </div>
+
+                        @*<div id="chart_lines1" class="chart" style="height: 226px;"></div>*@
+                        <SfChart Height="215px" Palettes="@OrderOverTimepalettes">
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTimeCategory" IntervalType="IntervalType.Months" LabelFormat="MMM-yy" LabelIntersectAction="Syncfusion.Blazor.Charts.LabelIntersectAction.Hide">
+                                @*<ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" Interval="1">*@
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis LabelFormat="#,##0">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+
+                                <ChartAxisMajorGridLines Width="0.5"></ChartAxisMajorGridLines>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                            </ChartPrimaryYAxis>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@orderOverTimeDb" XName="Month" YName="PreviousOrder"
+                                             Name="Previous" Type="ChartSeriesType.Area">
+                                </ChartSeries>
+                                <ChartSeries DataSource="@orderOverTimeDb" XName="Month" YName="CurrentOrder"
+                                             Name="Current" Type="ChartSeriesType.Line" Width="2">
+                                    <ChartMarker Visible="true" Height="5" Width="5" Shape="ChartShape.Circle" />
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                            <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                            <ChartLegendSettings Visible="false" />
+                        </SfChart>
+
+                    </div>
+                </div>
+                <!-- /BOX -->
+            </div>
+
+            <div class="col-md-4">
+                <!-- BOX -->
+                <div class="box border">
+                    <div class="box-title-white" style="padding-bottom: 1px;">
+                        <span><h5>Abandoned Carts</h5></span>
+                    </div>
+                    <div class="box-body">
+                        <table class="table table-hover" style="margin-bottom: 0px;">
+                            <thead>
+                                <tr>
+                                    <th>Revenue</th>
+                                    <th>Carts</th>
+                                    <th>Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>$1,032,110</td>
+                                    <td>18454</td>
+                                    <td>81.75%</td>
+                                </tr>
+                                <tr>
+                                    <td class="negative">-12.25%</td>
+                                    <td class="negative">-9.53%</td>
+                                    <td class="positive">1.87%</td>
+                                </tr>
+                            <thead style="height:42px">
+                                <tr>
+                                    <th>Top Abandoned Products</th>
+                                    <th>Revenue</th>
+                                    <th>Carts</th>
+                                </tr>
+                            </thead>
+                            <tr>
+                                <td>Widget</td>
+                                <td>$517,055</td>
+                                <td>9401</td>
+                            </tr>
+                            <tr>
+                                <td>Cogs</td>
+                                <td>$235,040</td>
+                                <td>5876</td>
+                            </tr>
+                            <tr>
+                                <td>Gears</td>
+                                <td>$176,080</td>
+                                <td>2201</td>
+                            </tr>
+                            <tr>
+                                <td>Springs</td>
+                                <td>$103,935</td>
+                                <td>976</td>
+                            </tr>
+                            <tr>
+                                <td>Gears</td>
+                                <td>$103,935</td>
+                                <td>976</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- /Table -->
+            </div>
+
+        </div>
+        <!-- /Revenue chart -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box border">
+                    <div class="box-title-white"><span><h5>Orders by Value</h5></span></div>
+                    <div class="box-body">
+                        @*<div id="bar_chart" class="chart" style="height: 220px;"></div>*@
+                        <SfChart Height="220px">
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                            <ChartPrimaryXAxis Title="Order Value ($)" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                <ChartAxisTitleStyle Size="12px" Color="Gray"/>
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Title="No. of Orders">
+                                <ChartAxisTitleStyle Size="12px" Color="Gray" />
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorGridLines Width="0.5"></ChartAxisMajorGridLines>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                            </ChartPrimaryYAxis>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@OrderByPricebucketDb" XName="Pricebucket" YName="ordercount" Type="ChartSeriesType.Column"
+                                             Fill=@ThemeColorList[4] ColumnSpacing="0.1" ColumnWidth="0.6" Opacity="0.7" />
+                            </ChartSeriesCollection>
+                        </SfChart>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--/Orders Component-->
+        <!--Customer Component-->
+        <div class="row-header-blue">
+            <div style="float:left;">
+                Customers
+            </div>
+            <div style="float:right;font-size:13px;">
+                View More >>
+            </div>
+        </div>
+        <div class="row">
+
+            <div class="col-md-8" style="padding-right: 0px !important;">
+                <!-- BOX -->
+                <div class="box border">
+                    <div class="box-title-white" style="padding-bottom: 1px;"><span><h5>Customers Over: Time</h5></span></div>
+                    <div class="box-body" style="padding-top: 1px;">
+                        <div class="row rowstyle">
+                            <!-- <div class="col-lg-2" style="border-left: 3px solid #a5b3c0;"> -->
+                            <div class="col-md-3">
+                                <h6 style="font-weight: 800; color: #828282;">Customers</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    @foreach (var cust in customers)
+                                    {
+                                        @cust.customer
+
+                                        if (cust.Rev_Growth < 0)
+                                        {
+                                            <span class="percent-change red"><i class="fa fa-caret-down"></i> @Math.Round(cust.Rev_Growth, 2) %</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="percent-change green"><i class="fa fa-caret-up"></i> @Math.Round(cust.Rev_Growth, 2) %</span>
+                                        }
+
+                                    }
+                                </h5>
+                            </div>
+                            <!-- <div class="col-lg-3" style="border-left: 3px solid #df7c82;"> -->
+                            <div class="col-md-3">
+                                <h6 style="font-weight: 800; color: #828282;">Active Customers</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    1323
+                                    <span class="percent-change red"><i class="fa fa-caret-down"></i> -5.2%</span>
+                                </h5>
+                            </div>
+                            <!-- <div class="col-lg-3" style="border-left: 3px solid #faeaec; margin: 0px -16px;"> -->
+                            <div class="col-md-4">
+                                <h6 style="font-weight: 800; color: #828282;">Customer LifeTime Value</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    $3424
+                                    <span class="percent-change green"><i class="fa fa-caret-up"></i> 5.8%</span>
+                                </h5>
+                            </div>
+                        </div>
+                        <div id="stack_chart_legends" style="text-align:center;"></div>
+                        @*<div id="stack_Chart" class="chart" style="height: 226px;"></div>*@
+                        <SfChart Height="226px" Palettes="@CustomerTimepalettes">
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartTooltipSettings Enable="true" Format="${series.name} ${point.x} : ${point.y}"></ChartTooltipSettings>
+
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTimeCategory" IntervalType="IntervalType.Months" LabelFormat="MMM-yy" LabelIntersectAction="Syncfusion.Blazor.Charts.LabelIntersectAction.Hide">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis LabelFormat="#,##0">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorGridLines Width="0.5"></ChartAxisMajorGridLines>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                            </ChartPrimaryYAxis>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@customerOverTimeDb" XName="Month" YName="Previous" Type="ChartSeriesType.Area">
+                                </ChartSeries>
+                                <ChartSeries DataSource="@customerOverTimeDb" XName="Month" YName="NotActive" Type="ChartSeriesType.StackingColumn" ColumnSpacing="0.1" ColumnWidth="0.6"></ChartSeries>
+                                <ChartSeries DataSource="@customerOverTimeDb" XName="Month" YName="Active" Type="ChartSeriesType.StackingColumn" ColumnSpacing="0.1" ColumnWidth="0.6"></ChartSeries>
+                            </ChartSeriesCollection>
+                            @*<ChartLegendSettings Visible="true"></ChartLegendSettings>*@
+                        </SfChart>
+                    </div>
+                </div>
+                <!-- /BOX -->
+            </div>
+
+            <div class="col-md-4">
+                <!-- BOX -->
+                <div class="box border">
+                    <div class="box-title-white">
+                        <span><h5>Revenue-New vs Repeat Customers</h5></span>
+                    </div>
+                    <div class="box-body">
+                        <div class="box-body">
+                            @*<div id="Customer_pie_Chart" class="chart" style="height: 252px;"></div>*@
+                            <SfAccumulationChart Height="252px">
+                                <AccumulationChartEvents TooltipRender="TooltipRenderEvent" />
+                                <AccumulationChartLegendSettings Visible="false" />
+                                <AccumulationChartTooltipSettings Enable="true" Format="${point.x} : ${point.y}"></AccumulationChartTooltipSettings>
+                                <AccumulationChartSeriesCollection>
+                                    <AccumulationChartSeries DataSource="@customerPieDb" XName="CustomerName" YName="CustomerValue" Radius="100%"
+                                                             Name="New vs Repeat Customer" PointColorMapping="fill">
+                                        <AccumulationDataLabelSettings Name="CustomerMapping" Visible="true" Position="AccumulationLabelPosition.Inside">
+                                            <ChildContent>
+                                                <AccumulationChartDataLabelFont Color="white">
+                                                </AccumulationChartDataLabelFont>
+                                            </ChildContent>
+                                            <Template>
+                                                @{ var data = context as AccumulationChartDataPointInfo; }
+                                                <div style="text-align: center; color:white">@data.X <br> @Math.Round(data.Percentage)%</div>
+                                            </Template>
+                                        </AccumulationDataLabelSettings>
+
+                                    </AccumulationChartSeries>
+                                </AccumulationChartSeriesCollection>
+                            </SfAccumulationChart>
+                        </div>
+                    </div>
+                </div>
+                <!-- /Table -->
+            </div>
+
+
+        </div>
+        <!-- /Revenue chart -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default box">
+                    <div class="box-title-white"><span><h5>Top 5 Customers</h5></span></div>
+
+                    <div class="panel-body">
+                        @if (Top5CustomersDb == null)
+                        {
+                            <p><em>Loading...</em> </p>
+                        }
+                        else
+                        {
+                            <div class="big sparkline-stats col-sm-4">
+                                <!-- <div class="sparkline-row"> -->
+                                <table class="sparkline-table big" style="width:100%;">
+                                    @{
+                                        int Col1cnt = 0;
+                                        int Col2cnt = 0;
+                                        int ColIntv = Convert.ToInt32(Math.Round(((decimal)Top5CustomersDb.Count / 3), 0));
+                                    }
+
+                                    @for (int i = 0; i < ColIntv; i++)
+                                    {
+                                        <tr>
+                                            <td class="title"><h6>@Top5CustomersDb[i].Customer_Name</h6></td>
+                                            <td>
+                                                @{
+                                                    CustSparklineData = sda.GetTop5CustSparkline(@Top5CustomersDb[i].Customer_Name.ToString());
+
+                                                    //if (CustSparklineData.Any(sku => sku.CustomerName == @Top5CustomersDb[i].Customer_Name))
+                                                    //{
+
+                                                    //    var data = CustSparklineData.Find(sku => sku.CustomerName == @Top5CustomersDb[i].Customer_Name);
+
+
+                                                    <SfSparkline XName="OrderDate"
+                                                                 YName="NoOfCust"
+                                                                 ValueType="SparklineValueType.DateTime"
+                                                                 TValue="CustSparklineAllData"
+                                                                 DataSource="CustSparklineData"
+                                                                 Height="30px"
+                                                                 Width="120px"
+                                                                 HighPointColor="Green"
+                                                                 LowPointColor="red">
+                                                        <SparklineTooltipSettings Visible="true" TValue="CustSparklineAllData">
+                                                            <Template>
+                                                                @{
+                                                                    <div style="background-color: #555555;  color : white; padding:5px; width:120px;">@context.OrderDate.Date.ToString("MMM-yy") : $@context.NoOfCust.ToString("#,##0")</div>
+                                                                }
+                                                            </Template>
+                                                        </SparklineTooltipSettings>
+                                                        <SparklineMarkerSettings Visible="new List<VisibleType> { VisibleType.High, VisibleType.Low }"></SparklineMarkerSettings>
+                                                    </SfSparkline>
+                                                    // }
+                                                }
+                                            </td>
+                                            <td class="value">$@(Math.Round(Top5CustomersDb[i].NoOfCust, 0).ToString("#,##0"))</td>
+                                            @if (Top5CustomersDb[i].Growth >= 0)
+                                            {
+                                                <td class="value positive">@(Math.Round(Top5CustomersDb[i].Growth, 2))%</td>
+                                            }
+                                            else
+                                            {
+                                                <td class="value negative">@(Math.Round(Top5CustomersDb[i].Growth, 2))%</td>
+                                            }
+                                        </tr>
+                                        Col1cnt++;
+                                    }
+                                </table>
+                            </div>
+                            <div class="big sparkline-stats col-sm-4">
+                                <!-- <div class="sparkline-row"> -->
+                                <table class="sparkline-table big" style="width:100%;">
+
+                                    @for (int j = Col1cnt; j < ColIntv + Col1cnt; j++)
+                                    {
+                                        <tr>
+                                            <td class="title"><h6>@Top5CustomersDb[j].Customer_Name</h6></td>
+                                            <td>
+                                                @{
+                                                    CustSparklineData = sda.GetTop5CustSparkline(@Top5CustomersDb[j].Customer_Name.ToString());
+                                                    //if (CustSparklineData.Any(sku => sku.CustomerName == @Top5CustomersDb[j].Customer_Name))
+                                                    //{
+                                                    //    var data = CustSparklineData.Find(sku => sku.CustomerName == @Top5CustomersDb[j].Customer_Name);
+
+
+                                                    <SfSparkline XName="OrderDate"
+                                                                 YName="NoOfCust"
+                                                                 ValueType="SparklineValueType.DateTime"
+                                                                 TValue="CustSparklineAllData"
+                                                                 DataSource="CustSparklineData"
+                                                                 Height="30px"
+                                                                 Width="120px"
+                                                                 HighPointColor="Green"
+                                                                 LowPointColor="red">
+                                                        <SparklineTooltipSettings Visible="true" TValue="CustSparklineAllData">
+                                                            <Template>
+                                                                @{
+                                                                    <div style="background-color: #555555;  color : white; padding:5px; width:120px;">@context.OrderDate.Date.ToString("MMM-yy") : $@context.NoOfCust.ToString("#,##0")</div>
+                                                                }
+                                                            </Template>
+                                                        </SparklineTooltipSettings>
+
+                                                        <SparklineMarkerSettings Visible="new List<VisibleType> { VisibleType.High, VisibleType.Low }"></SparklineMarkerSettings>
+                                                    </SfSparkline>
+                                                    // }
+                                                }
+                                            </td>
+                                            <td class="value">$@(Math.Round(@Top5CustomersDb[j].NoOfCust, 0).ToString("#,##0"))</td>
+                                            @if (Top5CustomersDb[j].Growth >= 0)
+                                            {
+                                                <td class="value positive">@(Math.Round(Top5CustomersDb[j].Growth, 2))%</td>
+                                            }
+                                            else
+                                            {
+                                                <td class="value negative">@(Math.Round(Top5CustomersDb[j].Growth, 2))%</td>
+                                            }
+                                        </tr>
+
+                                        Col2cnt++;
+                                    }
+
+
+                                </table>
+                            </div>
+                            <div class="big sparkline-stats col-sm-4">
+                                <!-- <div class="sparkline-row"> -->
+                                <table class="sparkline-table big" style="width:100%;">
+                                    @for (int k = Col1cnt + Col2cnt; k < @Top5CustomersDb.Count; k++)
+                                    {
+                                        <tr>
+                                            <td class="title"><h6>@Top5CustomersDb[k].Customer_Name</h6></td>
+                                            <td>
+                                                @{
+                                                    CustSparklineData = sda.GetTop5CustSparkline(@Top5CustomersDb[k].Customer_Name.ToString());
+                                                    //if (CustSparklineData.Any(sku => sku.CustomerName == @Top5CustomersDb[k].Customer_Name))
+                                                    //{
+                                                    //    var data = CustSparklineData.Find(sku => sku.CustomerName == @Top5CustomersDb[k].Customer_Name);
+
+
+                                                    <SfSparkline XName="OrderDate"
+                                                                 YName="NoOfCust"
+                                                                 ValueType="SparklineValueType.DateTime"
+                                                                 TValue="CustSparklineAllData"
+                                                                 DataSource="CustSparklineData"
+                                                                 Height="30px"
+                                                                 Width="120px"
+                                                                 HighPointColor="Green"
+                                                                 LowPointColor="red">
+                                                        <SparklineTooltipSettings Visible="true" TValue="CustSparklineAllData">
+                                                            <Template>
+                                                                @{
+                                                                    <div style="background-color: #555555;  color : white; padding:5px; width:120px;">@context.OrderDate.Date.ToString("MMM-yy") : $@context.NoOfCust.ToString("#,##0")</div>
+                                                                }
+                                                            </Template>
+                                                        </SparklineTooltipSettings>
+                                                        <SparklineMarkerSettings Visible="new List<VisibleType> { VisibleType.High, VisibleType.Low }"></SparklineMarkerSettings>
+                                                    </SfSparkline>
+                                                    // }
+                                                }
+                                            </td>
+                                            <td class="value">$@(Math.Round(@Top5CustomersDb[k].NoOfCust, 0).ToString("#,##0"))</td>
+                                            @if (Top5CustomersDb[k].Growth >= 0)
+                                            {
+                                                <td class="value positive">@(Math.Round(Top5CustomersDb[k].Growth, 2))%</td>
+                                            }
+                                            else
+                                            {
+                                                <td class="value negative">@(Math.Round(Top5CustomersDb[k].Growth, 2))%</td>
+                                            }
+                                        </tr>
+                                    }
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!--/Customers Component-->
+        <!--Traffic Component-->
+        <div class="row-header-green">
+            <div style="float:left;">
+                Traffic
+            </div>
+            <div style="float:right;font-size:13px;">
+                View More >>
+            </div>
+        </div>
+        <div class="row">
+
+
+            <div class="col-md-8" style="padding-right: 0px !important;">
+                <!-- BOX -->
+                <div class="box border">
+                    <div class="box-title-white" style="padding-bottom: 1px;"><span><h5>Visits Over: Time</h5></span></div>
+                    <div class="box-body" style="padding-top: 1px;">
+                        <div class="row rowstyle">
+                            <!-- <div class="col-lg-2" style="border-left: 3px solid #a5b3c0;"> -->
+                            <div class="col-md-3">
+                                <h6 style="font-weight: 800; color: #828282;">Visits</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    @foreach (var pro in visits)
+                                    {
+                                        @pro.visitcount
+
+                                        if (pro.Rev_growth < 0)
+                                        {
+                                            <span class="percent-change red"><i class="fa fa-caret-down"></i> @Math.Round(pro.Rev_growth, 2) %</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="percent-change green"><i class="fa fa-caret-up"></i> @Math.Round(pro.Rev_growth, 2) %</span>
+                                        }
+                                    }
+                                </h5>
+                            </div>
+                            <!-- <div class="col-lg-3" style="border-left: 3px solid #df7c82;"> -->
+                            <div class="col-md-3">
+                                <h6 style="font-weight: 800; color: #828282;">Active Customers</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    1323
+                                    <span class="percent-change red"><i class="fa fa-caret-down"></i> -5.2%</span>
+                                </h5>
+                            </div>
+                            <!-- <div class="col-lg-3" style="border-left: 3px solid #faeaec; margin: 0px -16px;"> -->
+                            <div class="col-md-4">
+                                <h6 style="font-weight: 800; color: #828282;">Conversion Rate</h6>
+                                <h5 style="margin : 5px 0px;">
+                                    2.5%
+                                    <span class="percent-change green"><i class="fa fa-caret-up"></i> 1.8%</span>
+                                </h5>
+                            </div>
+                        </div>
+                        @*<div id="Traffic_Sales_chart" class="chart" style="height: 226px;"></div>*@
+                        <SfChart Height="218px" Palettes="@VisitOverTimepalettes">
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTimeCategory" IntervalType="IntervalType.Months" LabelFormat="MMM-yy" LabelIntersectAction="Syncfusion.Blazor.Charts.LabelIntersectAction.Hide">
+                                @*<ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" Interval="1">*@
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis LabelFormat="#,##0">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+
+                                <ChartAxisMajorGridLines Width="0.5"></ChartAxisMajorGridLines>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                            </ChartPrimaryYAxis>
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@VisiteOverTimeDb" XName="Month" YName="PreviousVisit"
+                                             Name="Previous" Type="ChartSeriesType.Area">
+                                </ChartSeries>
+                                <ChartSeries DataSource="@VisiteOverTimeDb" XName="Month" YName="CurrentVisit"
+                                             Name="Current" Type="ChartSeriesType.Column" ColumnSpacing="0.1" ColumnWidth="0.6" Opacity="0.7">
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                            <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                            <ChartLegendSettings Visible="false" />
+                        </SfChart>
+                    </div>
+                </div>
+                <!-- /BOX -->
+            </div>
+
+            <div class="col-md-4">
+                <!-- BOX -->
+                <div class="box border">
+                    <div class="box-title-white" style="padding-bottom: 1px;">
+                        <span><h5>Purchase Funnel</h5></span>
+                    </div>
+                    <div class="box-body" style="padding-top: 1px;">
+                        <SfAccumulationChart EnableAnimation="false" Theme="@Theme" Height="62%" EnableSmartLabels="true">
+                            <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                            <AccumulationChartLegendSettings Visible="false"></AccumulationChartLegendSettings>
+                            <AccumulationChartSeriesCollection>
+                                <AccumulationChartSeries DataSource="@FunnelChartPoints" XName="Purchased" YName="Value"
+                                                         Type="AccumulationType.Funnel" NeckWidth=30% NeckHeight=10 PointColorMapping="color" GapRatio="0.1">
+                                    <AccumulationDataLabelSettings Visible="true" Name="Purchased" Position="AccumulationLabelPosition.Inside">
+                                        <ChildContent><AccumulationChartConnector Length="5px"></AccumulationChartConnector></ChildContent>
+                                        <Template>
+                                            @{ var data = context as AccumulationChartDataPointInfo; }
+                                            <div style="text-align:center; color:#555555"> @data.X <br> @Math.Round(data.Percentage)% </div>
+
+                                        </Template>
+
+                                    </AccumulationDataLabelSettings>
+                                </AccumulationChartSeries>
+                            </AccumulationChartSeriesCollection>
+                        </SfAccumulationChart>
+                    </div>
+                </div>
+                <!-- /Table -->
+            </div>
+
+        </div>
+        <!-- /Revenue chart -->
+        <div class="row">
+            <div class="col-md-6" style="padding-right: 0px !important;">
+                <div class="box border">
+                    <div class="box-title-white"><span><h5>Traffic by Region</h5></span></div>
+                    <div class="box-body">
+                        @*<div id="vmap_world" class="vmaps" style="height: 220px;"></div>*@
+                        <SfMaps ProjectionType="@ProjectionType.Mercator" Height="222px">
+                            <MapsZoomSettings Enable="true" />
+                            <MapsLegendSettings Visible="true" Mode="LegendMode.Interactive" Height="10" Width="30%" Position="Syncfusion.Blazor.Maps.LegendPosition.Bottom">
+                                <MapsToggleLegendSettings Enable="false" />
+                            </MapsLegendSettings>
+                            <MapsLayers>
+                                <MapsLayer ShapeData='new { dataOptions = "https://cdn.syncfusion.com/maps/map-data/world-map.json" }'
+                                           ShapePropertyPath='new string[] { "name" }'
+                                           DataSource="@trafficView"
+                                           ShapeDataPath="Name"
+                                           TValue="TrafficWorld">
+                                    <MapsShapeSettings Fill="#d682b6" ColorValuePath="View">
+                                        <MapsShapeColorMappings>
+                                            <MapsShapeColorMapping StartRange="0" EndRange="100000" Color='new string[] { "#816aae", "#d682b6", "#faa86f" }'></MapsShapeColorMapping>
+                                            @*<MapsShapeColorMapping StartRange="10000" EndRange="100000" Color='new string[] {"#fbc987"}'></MapsShapeColorMapping>
+                                                <MapsShapeColorMapping StartRange="100000" EndRange="1000000" Color='new string[] {"#da5859"}'></MapsShapeColorMapping>*@
+                                        </MapsShapeColorMappings>
+                                    </MapsShapeSettings>
+                                    <MapsLayerTooltipSettings Visible="true" ValuePath="Name" Format="<b> ${Name}</b> <br> Visits : ${View}"></MapsLayerTooltipSettings>
+                                </MapsLayer>
+                            </MapsLayers>
+                        </SfMaps>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3" style="padding-right: 0px !important;">
+                <div class="box border">
+                    <div class="box-title-white"><span><h5>Traffic Source</h5></span></div>
+                    <div class="box-body">
+                        @*<div id="Traffic_chart" class="chart" style="height: 220px;"></div>*@
+                        <SfAccumulationChart Height="220px">
+                            <AccumulationChartLegendSettings Visible="false" />
+                            <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                            <AccumulationChartSeriesCollection>
+                                <AccumulationChartSeries DataSource="@TrafficSourceDb" XName="Region" YName="CustomerCount" Radius="100%"
+                                                         Name="Traffic Source" PointColorMapping="fill">
+                                    <AccumulationDataLabelSettings Name="SegmentMapping" Visible="true" Position="AccumulationLabelPosition.Inside">
+                                        <ChildContent>
+                                            <AccumulationChartDataLabelFont Color="white">
+                                            </AccumulationChartDataLabelFont>
+                                        </ChildContent>
+                                        <Template>
+                                            @{ var data = context as AccumulationChartDataPointInfo; }
+                                            <div style="text-align: center; color:white">@data.X <br> @Math.Round(data.Percentage)%</div>
+                                        </Template>
+                                    </AccumulationDataLabelSettings>
+
+                                </AccumulationChartSeries>
+                            </AccumulationChartSeriesCollection>
+                        </SfAccumulationChart>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="box border">
+                    <div class="box-title-white"><span><h5>Device Type</h5></span></div>
+                    <div class="box-body">
+                        @*<div id="Device_chart" class="chart" style="height: 220px;"></div>*@
+                        <SfAccumulationChart Height="220px">
+                            <AccumulationChartLegendSettings Visible="false" />
+                            <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                            <AccumulationChartSeriesCollection>
+                                <AccumulationChartSeries DataSource="@DeviceTypeDb" XName="Subbcategory" YName="CustomerCount" Radius="100%"
+                                                         Name="Device Type" PointColorMapping="fill">
+                                    <AccumulationDataLabelSettings Name="SegmentMapping" Visible="true" Position="AccumulationLabelPosition.Inside">
+                                        <ChildContent>
+                                            <AccumulationChartDataLabelFont Color="white">
+                                            </AccumulationChartDataLabelFont>
+                                        </ChildContent>
+                                        <Template>
+                                            @{ var data = context as AccumulationChartDataPointInfo; }
+                                            <div style="text-align: center; color:white">@data.X <br> @Math.Round(data.Percentage)%</div>
+                                        </Template>
+
+                                    </AccumulationDataLabelSettings>
+
+                                </AccumulationChartSeries>
+                            </AccumulationChartSeriesCollection>
+                        </SfAccumulationChart>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--/Traffic Component-->
+        <div class="footer-tools">
+            <span class="go-top">
+                <i class="fa fa-chevron-up"></i> Top
+            </span>
+        </div>
+
+    </div><!-- /CONTENT-->
+</div>
+
+
