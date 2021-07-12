@@ -303,7 +303,7 @@
                             </SfMultiSelect>
                         </div>
                         <div class="col-sm-2 filter-header">
-                            <h5>Region/State:</h5>
+                            <h5>Region/State: </h5>
                             <SfMultiSelect TValue="string[]" TItem="RegionDb" AllowFiltering="true" Placeholder="Select a Region" Mode="@VisualMode.CheckBox" DataSource="@regions" ShowSelectAll="@ShowSelectAllCheckBox" EnableSelectionOrder="@EnableSelectionOrders" ShowDropDownIcon="true" FilterBarPlaceholder="Search Region" PopupHeight="350px" @bind-Value="regionvalues">
                                 <MultiSelectFieldSettings Text="Name" Value="Name"></MultiSelectFieldSettings>
                                 @*<MultiSelectEvents TValue="string[]" TItem="RegionDb" OnClose="getValues"></MultiSelectEvents>*@
