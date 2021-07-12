@@ -295,7 +295,7 @@
                     </div>
                     <div class="row" style="padding-bottom: 10px;border-top: 1px solid #ececec;padding-top: 10px;">
                         <div class="col-sm-3 filter-header">
-                            <h5>Category/SubCategory: </h5>
+                            <h5>Category/SubCategory:</h5>
                             <SfMultiSelect TValue="string[]" AllowFiltering="true" TItem="CategoryDb" Mode="@VisualMode.CheckBox" Placeholder="Select a Category" DataSource="@catSubCatDb" ShowSelectAll="@ShowSelectAllCheckBox"
                                            EnableSelectionOrder="@EnableSelectionOrders" FilterBarPlaceholder="Search Category" EnableGroupCheckBox="@EnableCheckBox" PopupHeight="350px" ShowDropDownIcon="true" @bind-Value="multiselectValue">
                                 <MultiSelectFieldSettings GroupBy="Category" Value="SubCategory"></MultiSelectFieldSettings>
@@ -303,7 +303,7 @@
                             </SfMultiSelect>
                         </div>
                         <div class="col-sm-2 filter-header">
-                            <h5>Region/State: </h5>
+                            <h5>Region/State:</h5>
                             <SfMultiSelect TValue="string[]" TItem="RegionDb" AllowFiltering="true" Placeholder="Select a Region" Mode="@VisualMode.CheckBox" DataSource="@regions" ShowSelectAll="@ShowSelectAllCheckBox" EnableSelectionOrder="@EnableSelectionOrders" ShowDropDownIcon="true" FilterBarPlaceholder="Search Region" PopupHeight="350px" @bind-Value="regionvalues">
                                 <MultiSelectFieldSettings Text="Name" Value="Name"></MultiSelectFieldSettings>
                                 @*<MultiSelectEvents TValue="string[]" TItem="RegionDb" OnClose="getValues"></MultiSelectEvents>*@
