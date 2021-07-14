@@ -295,7 +295,7 @@
                     </div>
                     <div class="row" style="padding-bottom: 10px;border-top: 1px solid #ececec;padding-top: 10px;">
                         <div class="col-sm-3 filter-header">
-                            <h5>Category/SubCategory:</h5>
+                            <h5>Category/SubCategory: </h5>
                             <SfMultiSelect TValue="string[]" AllowFiltering="true" TItem="CategoryDb" Mode="@VisualMode.CheckBox" Placeholder="Select a Category" DataSource="@catSubCatDb" ShowSelectAll="@ShowSelectAllCheckBox"
                                            EnableSelectionOrder="@EnableSelectionOrders" FilterBarPlaceholder="Search Category" EnableGroupCheckBox="@EnableCheckBox" PopupHeight="350px" ShowDropDownIcon="true" @bind-Value="multiselectValue">
                                 <MultiSelectFieldSettings GroupBy="Category" Value="SubCategory"></MultiSelectFieldSettings>
